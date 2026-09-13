@@ -1,6 +1,7 @@
 use crate::server::{ClientHandle, spawn_client};
 use color_eyre::eyre::Ok;
-use ratatui_image::thread::ThreadProtocol;
+use ratatui_image::thread::{ResizeRequest, ThreadProtocol};
+use tokio::sync::mpsc::{self, UnboundedSender, UnboundedReceiver}; 
 
 pub struct TabsState<'titles> {
     pub titles: Vec<&'titles str>,
@@ -35,11 +36,17 @@ pub struct App<'title> {
     pub client_addr: String,
     pub logged_keys: String,
     pub screenshot: ThreadProtocol,
+    pub tx: UnboundedSender<ResizeRequest>,
+    pub rx: UnboundedReceiver<ResizeRequest>,
     pub client: ClientHandle,
 }
 
 impl<'title> App<'title> {
-    pub fn new(title: &'title str, protocol: ThreadProtocol) -> Self {
+    pub fn new(title: &'title str) -> Self { 
+        let (tx, rx) = mpsc::unbounded_channel::<ResizeRequest>();
+        let tx_clone = tx.clone();
+        let protocol = ThreadProtocol::new(tx_clone, None);
+
         Self {
             title,
             input: String::new(),
@@ -50,6 +57,8 @@ impl<'title> App<'title> {
             client_addr: String::new(),
             logged_keys: String::new(),
             screenshot: protocol,
+            tx,
+            rx,
             client: spawn_client("127.0.0.1:7878"),
         }
     }
