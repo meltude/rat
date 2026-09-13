@@ -3,11 +3,13 @@ use tokio::sync::mpsc;
 use scrap::{Capturer, Display};
 use std::io::ErrorKind::WouldBlock;
 use std::thread;
+use image::ImageReader;
+use std::io::Cursor;
 
 use crate::Data;
 
-async fn handle_screenshot(tx: mpsc::Sender<Data>) -> std::io::Result<()> {
-    let frame_duration = Duration::from_secs_f32(1.0 / 60.0);
+pub async fn handle_screenshot(tx: mpsc::Sender<Data>) -> std::io::Result<()> {
+    let frame_duration = Duration::from_secs_f32(3.0);
 
     tokio::task::spawn_blocking(move || {
         let display = Display::primary().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
@@ -42,7 +44,17 @@ async fn handle_screenshot(tx: mpsc::Sender<Data>) -> std::io::Result<()> {
                 }
             }
 
-            if tx.blocking_send(Data::Screenshot(bitflipped)).is_err() {
+            let img = ImageReader::new(
+                Cursor::new(bitflipped)
+            )
+            .with_guessed_format()?
+            .decode()
+            .expect("cannot decode bytes to image");
+        
+            let mut compressed_bytes = Vec::new();
+            img.write_to(&mut Cursor::new(&mut compressed_bytes), image::ImageFormat::Avif).unwrap();
+
+            if tx.blocking_send(Data::Screenshot(compressed_bytes)).is_err() {
                 break;
             }
 

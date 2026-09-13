@@ -52,6 +52,12 @@ async fn main() -> io::Result<()> {
         }
     });
 
+    let tx_clone = tx.clone();
+    tokio::spawn(async move {
+        capturer::handle_screenshot(tx_clone).await?;
+        Ok::<_, io::Error>(())
+    });
+
     tokio::spawn(async move  {
         while let Some(data) = rx.recv().await {
             wr.write_all(&data.process()).await?;
