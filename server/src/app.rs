@@ -33,7 +33,8 @@ pub struct App<'title> {
     pub character_index: usize,
     pub messages: Vec<String>,
     pub instructions: Vec<String>,
-    pub client_addr: String,
+    pub addr: String,
+    pub img_addr: String,
     pub logged_keys: String,
     pub screenshot: ThreadProtocol,
     pub tx: UnboundedSender<ResizeRequest>,
@@ -42,7 +43,7 @@ pub struct App<'title> {
 }
 
 impl<'title> App<'title> {
-    pub fn new(title: &'title str) -> Self { 
+    pub async fn new(title: &'title str) -> Self { 
         let (tx, rx) = mpsc::unbounded_channel::<ResizeRequest>();
         let tx_clone = tx.clone();
         let protocol = ThreadProtocol::new(tx_clone, None);
@@ -54,12 +55,15 @@ impl<'title> App<'title> {
             messages: Vec::new(),
             instructions: Vec::new(),
             character_index: 0,
-            client_addr: String::new(),
+            addr: String::new(),
+            img_addr: String::new(),
             logged_keys: String::new(),
             screenshot: protocol,
             tx,
             rx,
-            client: spawn_client("127.0.0.1:7878"),
+            client: spawn_client("127.0.0.1:7878", "127.0.0.1:7879")
+                .await
+                .expect("cannot spawn server"),
         }
     }
 
