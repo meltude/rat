@@ -6,8 +6,6 @@ use std::thread;
 use image::ImageReader;
 use std::io::Cursor;
 
-use crate::Data;
-
 pub async fn handle_screenshot(tx: mpsc::Sender<Data>) -> std::io::Result<()> {
     let frame_duration = Duration::from_secs_f32(3.0);
 
