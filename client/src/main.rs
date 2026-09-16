@@ -11,6 +11,8 @@ use rdev::{Event, listen};
 use std::io::ErrorKind::WouldBlock;
 use std::thread;
 use std::process::Command;
+
+#[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
 #[tokio::main]
@@ -117,9 +119,16 @@ async fn main() -> io::Result<()> {
         
         match command {
             Ok(command) => {
+                #[cfg(target_os = "windows")]
                 Command::new("cmd")
                     .args(["/C", command])
                     .creation_flags(0x08000000) 
+                    .output()
+                    .expect("failed to excute command");
+
+                #[cfg(not(target_os = "windows"))]
+                Command::new("sh")
+                    .args(["-c", command])
                     .output()
                     .expect("failed to excute command");
             }
