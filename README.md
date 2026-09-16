@@ -9,7 +9,7 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
 
 ## ⚙️ App Demo
 
-<video src="https://raw.githubusercontent.com/ваш_логин/ваш_репозиторий/main/assets/video/demo.mp4" width="100%" controls muted></video>
+<video src="https://github.com/user-attachments/assets/f0337435-e826-4aea-acc3-469268377e80" width="100%" controls muted></video>
 
 ---
 
