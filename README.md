@@ -59,9 +59,9 @@ cargo run --bin client
 You can download the latest compiled binaries from the [Releases page](../../releases/latest):
 
 ### Windows (x86_64)
-* **Server:** [![Download Server](https://img.shields.io/badge/Download-server.exe-2496ED?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.0/server.exe)
-* **Client:** [![Download Client](https://img.shields.io/badge/Download-client.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.0/client.exe)
+[![Download Server](https://img.shields.io/badge/Download-server.exe-2496ED?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.0/server.exe)
+[![Download Client](https://img.shields.io/badge/Download-client.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.0/client.exe)
   
 ### Linux (x86_64)
-* **Server:** [![Download Linux Server](https://img.shields.io/badge/Download-server--linux-2496ED?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.1/server)
-* **Client:** [![Download Linux Client](https://img.shields.io/badge/Download-client--linux-0078D4?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.1/client)
+[![Download Server](https://img.shields.io/badge/Download-server.exe-2496ED?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.1/server)
+[![Download Client](https://img.shields.io/badge/Download-client.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.1/client)
