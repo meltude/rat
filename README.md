@@ -9,7 +9,7 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
 
 ## ⚙️ App Demo
 
-<video src="https://github.com/user-attachments/assets/f0337435-e826-4aea-acc3-469268377e80" width="100%" controls muted></video>
+<img width="1920" height="1080" alt="Windows PowerShell 2026-09-16 13-54-20" src="https://github.com/user-attachments/assets/59ad7b74-9de0-4dfa-860c-bec735ce788a" />
 
 ---
 
