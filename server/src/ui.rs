@@ -150,11 +150,11 @@ fn draw_first_tab(frame: &mut Frame, app: &mut App, area: Rect) {
         .style(Style::default().bg(Color::Rgb(10, 10, 18)));
 
     let client_lines = if !app.addr.is_empty() {
-        let (ip, port) = app.addr
+        let (ip, port1) = app.addr
             .rsplit_once(':')
             .unwrap_or((&app.addr, "?"));
 
-        let (img_ip, img_port) = app.img_addr
+        let (_, port2) = app.img_addr
             .rsplit_once(':')
             .unwrap_or((&app.img_addr, "?"));
 
@@ -175,16 +175,12 @@ fn draw_first_tab(frame: &mut Frame, app: &mut App, area: Rect) {
                 Span::styled(ip, Style::default().fg(Color::Rgb(130, 175, 255))),
             ]),
             Line::from(vec![
-                Span::styled("    port  ", Style::default().fg(Color::Rgb(50, 50, 80))),
-                Span::styled(port, Style::default().fg(Color::Rgb(130, 175, 255))),
+                Span::styled("    port1  ", Style::default().fg(Color::Rgb(50, 50, 80))),
+                Span::styled(port1, Style::default().fg(Color::Rgb(130, 175, 255))),
             ]),
             Line::from(vec![
-                Span::styled("    ip    ", Style::default().fg(Color::Rgb(50, 50, 80))),
-                Span::styled(img_ip, Style::default().fg(Color::Rgb(130, 175, 255))),
-            ]),
-            Line::from(vec![
-                Span::styled("    port  ", Style::default().fg(Color::Rgb(50, 50, 80))),
-                Span::styled(img_port, Style::default().fg(Color::Rgb(130, 175, 255))),
+                Span::styled("    port2  ", Style::default().fg(Color::Rgb(50, 50, 80))),
+                Span::styled(port2, Style::default().fg(Color::Rgb(130, 175, 255))),
             ]),
         ]
     } else {
