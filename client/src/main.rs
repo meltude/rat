@@ -73,7 +73,7 @@ async fn send_keystrokes(mut rx: Receiver<String>, mut wr: WriteHalf<TcpStream>)
 }
 
 async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
-    let frame_duration = Duration::from_secs_f32(3.0);
+    let frame_duration = Duration::from_secs_f32(1.0 / 5.0);
 
     tokio::task::spawn_blocking(move || {
         println!("init display");
@@ -89,7 +89,7 @@ async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
                 Ok(buffer) => buffer,
                 Err(error) => {
                     if error.kind() == WouldBlock {
-                        thread::sleep(Duration::from_millis(500));
+                        thread::sleep(Duration::from_millis(100));
                         continue;
                     } else {
                         println!("error: {}", error);
@@ -113,8 +113,13 @@ async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
                 .encode(&rgb, w as u32, h as u32, ExtendedColorType::Rgb8)
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-            println!("blocking send bytes to tcp stream");
-            if tx.blocking_send(bytes).is_err() { // && tx.blocking_send(bytes.len().as_slice()) 
+            let bytes_len = (bytes.len() as u32).to_be_bytes().to_vec();
+
+            if tx.blocking_send(bytes_len).is_err() {
+                break;
+            }
+
+            if tx.blocking_send(bytes).is_err() {
                 break;
             }
 
