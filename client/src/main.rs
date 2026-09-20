@@ -73,10 +73,9 @@ async fn send_keystrokes(mut rx: Receiver<String>, mut wr: WriteHalf<TcpStream>)
 }
 
 async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
-    let frame_duration = Duration::from_secs_f32(1.0 / 5.0);
+    let frame_duration = Duration::from_secs_f32(1.0);
 
     tokio::task::spawn_blocking(move || {
-        println!("init display");
         let display = Display::primary()?;
         let mut capturer = Capturer::new(display)?;
         let (w, h) = (capturer.width(), capturer.height());
@@ -84,7 +83,6 @@ async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
         let mut rgb = Vec::with_capacity(w * h * 3);
 
         loop {
-            println!("create a buffer");
             let buffer = match capturer.frame() {
                 Ok(buffer) => buffer,
                 Err(error) => {
@@ -113,13 +111,13 @@ async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
                 .encode(&rgb, w as u32, h as u32, ExtendedColorType::Rgb8)
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-            let bytes_len = (bytes.len() as u32).to_be_bytes().to_vec();
+            let bytes_len = (bytes.len() as u32).to_be_bytes();
 
-            if tx.blocking_send(bytes_len).is_err() {
-                break;
-            }
+            let mut packet = Vec::new();
+            packet.extend_from_slice(&bytes_len);
+            packet.extend_from_slice(&bytes);
 
-            if tx.blocking_send(bytes).is_err() {
+            if tx.blocking_send(packet).is_err() {
                 break;
             }
 
@@ -136,7 +134,6 @@ async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
 
 async fn send_screenshot(mut rx: Receiver<Vec<u8>>, mut wr: WriteHalf<TcpStream>) -> io::Result<()> {
     while let Some(data) = rx.recv().await {
-        println!("bytes is sended to tcp socket");
         wr.write_all(data.as_slice()).await?;
     }
     Ok(())
