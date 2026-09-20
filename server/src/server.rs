@@ -82,16 +82,24 @@ async fn socket_img(
 
             let (mut rd, _) = io::split(socket);
 
-            let mut buf = [0u8; 1024];
+            let mut header_buf = [0u8; 4];
 
             loop {
-                let n = rd.read(&mut buf).await?;
+                let n = rd.read_exact(&mut header_buf).await?;
 
                 if n == 0 {
                     break;
                 }
 
-                let _ = socket_sender.send(ClientEvent::Data(buf[..n].to_vec())).await;
+                let body_len = u32::from_be_bytes(header_buf) as usize;
+
+                let mut body_buf = vec![0u8; body_len];
+
+                if let Err(_) = rd.read_exact(&mut body_buf).await {
+                    break;
+                }
+
+                let _ = socket_sender.send(ClientEvent::Data(body_buf)).await;
             }
         }
         Ok::<_, io::Error>(())
