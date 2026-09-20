@@ -78,28 +78,30 @@ async fn socket_img(
                 Ok(pair) => pair,
                 Err(_) => continue,
             };
-            let _ = socket_sender.send(ClientEvent::Connected(peer_addr)).await;
+
+            if socket_sender.send(ClientEvent::Connected(peer_addr)).await.is_err() {
+                break;
+            }
 
             let (mut rd, _) = io::split(socket);
 
             let mut header_buf = [0u8; 4];
 
             loop {
-                let n = rd.read_exact(&mut header_buf).await?;
-
-                if n == 0 {
+                if rd.read_exact(&mut header_buf).await.is_err() {
                     break;
                 }
 
                 let body_len = u32::from_be_bytes(header_buf) as usize;
-
                 let mut body_buf = vec![0u8; body_len];
 
-                if let Err(_) = rd.read_exact(&mut body_buf).await {
+                if rd.read_exact(&mut body_buf).await.is_err() {
                     break;
                 }
 
-                let _ = socket_sender.send(ClientEvent::Data(body_buf)).await;
+                if socket_sender.send(ClientEvent::Data(body_buf)).await.is_err() {
+                    break;
+                }
             }
         }
         Ok::<_, io::Error>(())
