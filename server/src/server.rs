@@ -3,59 +3,6 @@ use tokio::sync::mpsc::{self, UnboundedSender, UnboundedReceiver};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt, ReadHalf};
 
-use ratatui_image::{
-    thread::{ThreadProtocol, ResizeRequest},
-    picker::Picker,
-};
-
-use image::{DynamicImage, ImageReader};
-use std::io::Cursor;
-
-pub struct Screenshot {
-    pub protocol: ThreadProtocol,
-    pub bytes: Vec<u8>,
-    pub bytes_len: u8,
-    pub tx: UnboundedSender<ResizeRequest>,
-    pub rx: UnboundedReceiver<ResizeRequest>,
-}
-
-impl Screenshot {
-    pub fn new() -> Self {
-        let (tx, rx) = mpsc::unbounded_channel::<ResizeRequest>();
-        let tx_clone = tx.clone();
-        let protocol = ThreadProtocol::new(tx_clone, None);
-
-        Self {
-            protocol,
-            bytes: Vec::new(),
-            bytes_len: 0,
-            tx,
-            rx,
-        }
-    }
-
-    pub async fn apply_changes(&mut self) -> io::Result<()> {
-        let bytes = self.bytes.clone();
-        let image = tokio::task::spawn_blocking(move || {
-            ImageReader::new(
-                Cursor::new(bytes)
-            )
-            .with_guessed_format()?
-            .decode()
-        }).await?
-        .map_err(|e| tokio::io::Error::new(tokio::io::ErrorKind::Other, e))?;
-
-        let protocol = Picker::from_query_stdio()
-            .map_err(|e| tokio::io::Error::new(tokio::io::ErrorKind::Other, e))?
-            .new_resize_protocol(image);
-
-        let tx_clone = self.tx.clone();
-        self.protocol = ThreadProtocol::new(tx_clone, Some(protocol));
-
-        Ok(())
-    }
-}
-
 pub enum ClientEvent {
     Connected(std::net::SocketAddr),
     Disconnected,
