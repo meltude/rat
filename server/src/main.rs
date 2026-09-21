@@ -2,6 +2,7 @@
 mod app;
 mod ui;
 mod server;
+mod screenshot;
 
 use app::App;
 use std::error::Error;
@@ -50,7 +51,7 @@ async fn handle_client_img_event(app: &'_ mut App<'_>, event: ClientEvent) -> Re
         ClientEvent::Data(bytes) => {
             app.screenshot.bytes.clear();
             app.screenshot.bytes.extend_from_slice(&bytes);
-            app.screenshot.apply_changes().await?;
+            app.screenshot.update_screenshot().await?;
         },
         ClientEvent::Disconnected => app.img_addr = String::new(),
     }
