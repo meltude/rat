@@ -1,7 +1,7 @@
+use crate::screenshot::Screenshot;
 use crate::server::{
     ClientHandle, 
     spawn_client,
-    Screenshot,
 };
 
 use color_eyre::eyre::Ok;
