@@ -1,8 +1,10 @@
 use axum::{
     extract::{
+        Request,
         ws::{Message, Utf8Bytes, WebSocket, WebSocketUpgrade},
         State,
     },
+    middleware::{self, Next},
     response::{Html, IntoResponse},
     routing::get,
     Router,
@@ -91,9 +93,21 @@ async fn websocket_handler(
 }
 
 async fn websocket(mut socket: WebSocket) {
-    let _ = socket
-        .send(Message::Text("connected".into()))
-        .await;
+    while let Some(result) = socket.recv().await {
+        match result {
+            Ok(Message::Binary(bytes)) => {
+                println!("received bytes: {:?}", bytes.len());
+            }
+            Ok(Message::Close(_)) => {
+                break;
+            }
+            Ok(_) => {}
+            Err(err) => {
+                eprintln!("WebSocket error: {err}");
+                break;
+            }
+        }
+    }
 }
 
 async fn index() -> Html<&'static str> {
