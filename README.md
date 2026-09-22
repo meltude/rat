@@ -5,10 +5,6 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
 > **Disclaimer:** 
 > This project is created strictly for educational, demonstration, and research purposes. Using this software on devices without explicit prior authorization from the owner is illegal.
 
----
-
-## App Demo
-
 <img width="1920" height="1080" alt="Windows PowerShell 2026-09-16 13-54-20" src="https://github.com/user-attachments/assets/59ad7b74-9de0-4dfa-860c-bec735ce788a" />
 
 ---
