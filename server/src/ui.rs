@@ -149,14 +149,14 @@ fn draw_first_tab(frame: &mut Frame, app: &mut App, area: Rect) {
         ))
         .style(Style::default().bg(Color::Rgb(10, 10, 18)));
 
-    let client_lines = if !app.addr.is_empty() {
-        let (ip, port1) = app.addr
+    let client_lines = if !app.addr1.is_empty() {
+        let (ip, port1) = app.addr1
             .rsplit_once(':')
-            .unwrap_or((&app.addr, "?"));
+            .unwrap_or((&app.addr1, "?"));
 
-        let (_, port2) = app.img_addr
+        let (_, port2) = app.addr2
             .rsplit_once(':')
-            .unwrap_or((&app.img_addr, "?"));
+            .unwrap_or((&app.addr2, "?"));
 
         vec![
             Line::from(Span::raw("")),
