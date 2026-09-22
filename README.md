@@ -7,13 +7,13 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
 
 ---
 
-## ⚙️ App Demo
+## App Demo
 
 <img width="1920" height="1080" alt="Windows PowerShell 2026-09-16 13-54-20" src="https://github.com/user-attachments/assets/59ad7b74-9de0-4dfa-860c-bec735ce788a" />
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Cargo Workspace Architecture:** Clean separation into client (`client`), server (`server`).
 - **Interactive TUI:** Feature-rich terminal interface for the server built on `ratatui` and `crossterm`.
@@ -25,7 +25,7 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
 
 ---
 
-## 💻 Prerequisites & Building
+## Prerequisites & Building
 
 Building and running this project requires **Rust** (2021 edition or newer) and `cargo`.
 
@@ -49,7 +49,7 @@ cargo run --bin client
 
 ---
 
-## 📥 Downloads (Pre-built Binaries)
+## Downloads (Pre-built Binaries)
 
 You can download the latest compiled binaries from the [Releases page](../../releases/latest):
 
