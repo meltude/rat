@@ -127,13 +127,7 @@ async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
                 .encode(&rgb, w as u32, h as u32, ExtendedColorType::Rgb8)
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-            let bytes_len = (bytes.len() as u32).to_be_bytes();
-
-            let mut packet = Vec::new();
-            packet.extend_from_slice(&bytes_len);
-            packet.extend_from_slice(&bytes);
-
-            if tx.blocking_send(packet).is_err() {
+            if tx.blocking_send(bytes).is_err() {
                 break;
             }
 
