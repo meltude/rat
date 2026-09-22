@@ -1,3 +1,13 @@
+use axum::{
+    extract::{
+        ws::{Message, Utf8Bytes, WebSocket, WebSocketUpgrade},
+        State,
+    },
+    response::{Html, IntoResponse},
+    routing::get,
+    Router,
+};
+
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::mpsc::{self, UnboundedSender, UnboundedReceiver}; 
 use tokio::net::{TcpListener, TcpStream};
@@ -12,26 +22,31 @@ pub enum ClientEvent {
 pub struct ClientHandle {
     pub app_sender: mpsc::Sender<Vec<u8>>,   
     pub app_receiver: mpsc::Receiver<ClientEvent>, 
-    pub app_img_receiver: mpsc::Receiver<ClientEvent>,
 }
 
 pub async fn spawn_client(addr1: &str, addr2: &str) -> Result<ClientHandle, io::Error> {
+    let app = Router::new()
+        .route("/", get(index))
+        .route("/ws", get(websocket_handler));
+
     let (app_sender, mut socket_receiver) = mpsc::channel::<Vec<u8>>(32);
     let (socket_sender, app_receiver) = mpsc::channel::<ClientEvent>(32);
-    let (socket_img_sender, app_img_receiver) = mpsc::channel::<ClientEvent>(32);
 
-    let listener = TcpListener::bind(addr1).await?;
-    let listener_img = TcpListener::bind(addr2).await?;
+    let tcp_listener = TcpListener::bind(addr1).await?;
+    let websocket_listener = TcpListener::bind(addr2).await?;
 
-    socket_txt(listener, socket_sender, socket_receiver).await;
-    socket_img(listener_img, socket_img_sender).await;
+    tokio::spawn(async move {
+        axum::serve(websocket_listener, app).await;
+    });
+
+    tcp_stream(tcp_listener, socket_sender, socket_receiver).await;
 
     Ok(ClientHandle { 
-        app_sender, app_receiver, app_img_receiver 
+        app_sender, app_receiver
     })
 }
 
-async fn socket_txt(
+async fn tcp_stream(
     listener: TcpListener, 
     socket_sender: Sender<ClientEvent>,
     mut socket_receiver: Receiver<Vec<u8>>,
@@ -69,42 +84,18 @@ async fn socket_txt(
     });
 }
 
-async fn socket_img(
-    listener: TcpListener,
-    socket_sender: Sender<ClientEvent>,
-) {
-    tokio::spawn(async move {
-        loop {
-            let (socket, peer_addr) = match listener.accept().await {
-                Ok(pair) => pair,
-                Err(_) => continue,
-            };
+async fn websocket_handler(
+    ws: WebSocketUpgrade,
+) -> impl IntoResponse {
+    ws.on_upgrade(|socket| websocket(socket))
+}
 
-            if socket_sender.send(ClientEvent::Connected(peer_addr)).await.is_err() {
-                break;
-            }
+async fn websocket(mut socket: WebSocket) {
+    let _ = socket
+        .send(Message::Text("connected".into()))
+        .await;
+}
 
-            let (mut rd, _) = io::split(socket);
-
-            let mut header_buf = [0u8; 4];
-
-            loop {
-                if rd.read_exact(&mut header_buf).await.is_err() {
-                    break;
-                }
-
-                let body_len = u32::from_be_bytes(header_buf) as usize;
-                let mut body_buf = vec![0u8; body_len];
-
-                if rd.read_exact(&mut body_buf).await.is_err() {
-                    break;
-                }
-
-                if socket_sender.send(ClientEvent::Data(body_buf)).await.is_err() {
-                    break;
-                }
-            }
-        }
-        Ok::<_, io::Error>(())
-    });
+async fn index() -> Html<&'static str> {
+    Html(std::include_str!("../../web/index.html"))
 }
