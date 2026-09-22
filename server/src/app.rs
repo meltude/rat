@@ -4,6 +4,7 @@ use crate::server::{
 };
 
 use color_eyre::eyre::Ok;
+use futures::io;
 use ratatui_image::thread::{ResizeRequest, ThreadProtocol};
 use tokio::sync::mpsc::{self, UnboundedSender, UnboundedReceiver}; 
 
@@ -37,14 +38,16 @@ pub struct App<'title> {
     pub character_index: usize,
     pub messages: Vec<String>,
     pub instructions: Vec<String>,
-    pub addr: String,
-    pub img_addr: String,
+    pub addr1: String,
+    pub addr2: String,
     pub logged_keys: String,
     pub client: ClientHandle,
 }
 
 impl<'title> App<'title> {
     pub async fn new(title: &'title str) -> Self { 
+        let client = spawn_client("127.0.0.1:7878", "127.0.0.1:7879").await.unwrap();
+
         Self {
             title,
             input: String::new(),
@@ -52,12 +55,10 @@ impl<'title> App<'title> {
             messages: Vec::new(),
             instructions: Vec::new(),
             character_index: 0,
-            addr: String::new(),
-            img_addr: String::new(),
+            addr1: String::new(),
+            addr2: String::new(),
             logged_keys: String::new(),
-            client: spawn_client("127.0.0.1:7878", "127.0.0.1:7879")
-                .await
-                .expect("cannot spawn server"),
+            client,
         }
     }
 
