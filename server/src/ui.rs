@@ -248,7 +248,6 @@ fn draw_second_tab(frame: &mut Frame, app: &mut App, area: Rect) {
         .style(Style::default().bg(Color::Rgb(10, 10, 18)));
 
     frame.render_widget(user_screen, chunks[0]);
-    frame.render_stateful_widget(StatefulImage::new(), screen_block.inner(chunks[0]), &mut app.screenshot.protocol);
 
     let sep = Paragraph::new(Line::from(Span::styled(
         "─".repeat(area.width as usize),

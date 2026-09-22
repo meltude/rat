@@ -1,4 +1,3 @@
-use crate::screenshot::Screenshot;
 use crate::server::{
     ClientHandle, 
     spawn_client,
@@ -41,7 +40,6 @@ pub struct App<'title> {
     pub addr: String,
     pub img_addr: String,
     pub logged_keys: String,
-    pub screenshot: Screenshot,
     pub client: ClientHandle,
 }
 
@@ -57,7 +55,6 @@ impl<'title> App<'title> {
             addr: String::new(),
             img_addr: String::new(),
             logged_keys: String::new(),
-            screenshot: Screenshot::new(),
             client: spawn_client("127.0.0.1:7878", "127.0.0.1:7879")
                 .await
                 .expect("cannot spawn server"),
