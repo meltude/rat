@@ -30,20 +30,9 @@ use crate::server::ClientEvent;
 
 fn handle_keys(app: &mut App, event: ClientEvent) -> Result<(), Box<dyn Error>> {
     match event {
-        ClientEvent::Connected(addr) => app.addr = addr.to_string(),
+        ClientEvent::Connected(addr) => app.addr1 = addr.to_string(),
         ClientEvent::Data(bytes) => app.logged_keys.push_str(std::str::from_utf8(&bytes)?),
-        ClientEvent::Disconnected => app.addr = String::new(),
-    }
-    Ok(())
-}
-
-async fn handle_screen(app: &'_ mut App<'_>, event: ClientEvent) -> Result<(), Box<dyn Error>> {
-    match event {
-        ClientEvent::Connected(addr) => app.img_addr = addr.to_string(),
-        ClientEvent::Data(bytes) => {
-
-        },
-        ClientEvent::Disconnected => app.img_addr = String::new(),
+        ClientEvent::Disconnected => app.addr1 = String::new(),
     }
     Ok(())
 }
@@ -106,7 +95,6 @@ where
 
         tokio::select! {
             Some(event) = app.client.app_receiver.recv() => handle_keys(&mut app, event)?,
-            Some(event) = app.client.app_img_receiver.recv() => handle_screen(&mut app, event).await?,
             Some(event) = event_stream.next().fuse() => handle_app_event(&mut app, event).await?,
         }
 
