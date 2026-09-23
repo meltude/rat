@@ -7,6 +7,7 @@ use color_eyre::eyre::Ok;
 use futures::io;
 use ratatui_image::thread::{ResizeRequest, ThreadProtocol};
 use tokio::sync::mpsc::{self, UnboundedSender, UnboundedReceiver}; 
+use std::process::Command;
 
 pub struct TabsState<'titles> {
     pub titles: Vec<&'titles str>,
@@ -130,6 +131,20 @@ impl<'title> App<'title> {
         self.instructions.push(self.input.clone());
         self.input.clear();
         self.reset_cursor();
+    }
+
+    pub fn open_screen_viewer(&mut self) {
+        #[cfg(target_os = "windows")]
+        Command::new("cmd")
+            .args(["/C", "start", "", "http://127.0.0.1:7879"])
+            .spawn()
+            .expect("failed to open screen viewer");
+
+        #[cfg(not(target_os = "windows"))]
+        Command::new("xdg-open")
+            .arg("http://127.0.0.1:7879")
+            .spawn()
+            .expect("failed to execute command");
     }
 
     pub fn on_tick(&mut self) { 
