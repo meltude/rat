@@ -96,7 +96,7 @@ async fn websocket(mut socket: WebSocket) {
     while let Some(result) = socket.recv().await {
         match result {
             Ok(Message::Binary(bytes)) => {
-                println!("received bytes: {:?}", bytes.len());
+                println!("received bytes: {:?}", bytes.len())
             }
             Ok(Message::Close(_)) => {
                 break;
