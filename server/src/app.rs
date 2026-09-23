@@ -3,6 +3,7 @@ use crate::server::{
     spawn_client,
 };
 
+use bytes::Bytes;
 use color_eyre::eyre::Ok;
 use futures::io;
 use ratatui_image::thread::{ResizeRequest, ThreadProtocol};
@@ -47,7 +48,7 @@ pub struct App<'title> {
 
 impl<'title> App<'title> {
     pub async fn new(title: &'title str) -> Self { 
-        let client = spawn_client("127.0.0.1:7878", "127.0.0.1:7879").await.unwrap();
+        let client = spawn_client("127.0.0.1:7878", "127.0.0.1:8080").await.unwrap();
 
         Self {
             title,
@@ -136,13 +137,13 @@ impl<'title> App<'title> {
     pub fn open_screen_viewer(&mut self) {
         #[cfg(target_os = "windows")]
         Command::new("cmd")
-            .args(["/C", "start", "", "http://127.0.0.1:7879"])
+            .args(["/C", "start", "", "http://127.0.0.1:8080"])
             .spawn()
             .expect("failed to open screen viewer");
 
         #[cfg(not(target_os = "windows"))]
         Command::new("xdg-open")
-            .arg("http://127.0.0.1:7879")
+            .arg("http://127.0.0.1:8080")
             .spawn()
             .expect("failed to execute command");
     }
