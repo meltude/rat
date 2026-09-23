@@ -29,19 +29,25 @@
     const canvas = document.getElementById("screen");
     const ctx = canvas.getContext("2d");
 
-    const ws = new WebSocket(
-        `ws://${location.host}/ws`
-    );
+    const ws = new WebSocket("ws://127.0.0.1:8080/ws");
 
     ws.binaryType = "blob";
 
+    console.log("we are here");
+
     ws.onmessage = async (event) => {
+        console.log("creating bitmap ...");
+
         const bitmap = await createImageBitmap(event.data);
 
         canvas.width = bitmap.width;
         canvas.height = bitmap.height;
 
+        console.log("drawing image ...");
+
         ctx.drawImage(bitmap, 0, 0);
+
+        console.log("closing bitmap ...");
 
         bitmap.close();
     };
