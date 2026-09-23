@@ -26,7 +26,7 @@ use std::os::windows::process::CommandExt;
 async fn main() -> io::Result<()> {
     let tcpsocket = TcpStream::connect("127.0.0.1:7878").await?;
     let (websocket, _) = 
-        connect_async("ws://127.0.0.1:7879/ws").await.expect("failed to connect");
+        connect_async("ws://127.0.0.1:8080/ws").await.expect("failed to connect");
 
     let (rd_txt, wr_txt) = io::split(tcpsocket);
     let (write, _) = websocket.split(); 
