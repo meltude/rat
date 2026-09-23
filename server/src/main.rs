@@ -46,6 +46,7 @@ async fn handle_app_event(app: &'_ mut App<'_>, event: Result<Event, std::io::Er
             KeyCode::Enter => app.submit_instructions().await,    
             KeyCode::Left => app.move_cursor_left(),
             KeyCode::Right => app.move_cursor_right(),
+            KeyCode::F(1) => app.open_screen_viewer(),
             KeyCode::Char(to_insert) => app.enter_char(to_insert),
             KeyCode::Esc => return Ok(()),
             _ => {}
