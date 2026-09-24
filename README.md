@@ -7,8 +7,6 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
 
 <img width="1920" height="1080" alt="Windows PowerShell 2026-09-16 13-54-20" src="https://github.com/user-attachments/assets/59ad7b74-9de0-4dfa-860c-bec735ce788a" />
 
----
-
 ## Features
 
 - **Cargo Workspace Architecture:** Clean separation into client (`client`), server (`server`).
@@ -18,8 +16,6 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
   - Remote command execution.
   - Input event capture using the `rdev` library.
   - Client screen broadcast.
-
----
 
 ## Prerequisites & Building
 
@@ -42,8 +38,6 @@ cargo run --bin server
 ```bash
 cargo run --bin client
 ```
-
----
 
 ## Downloads (Pre-built Binaries)
 
