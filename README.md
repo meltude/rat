@@ -5,7 +5,9 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
 > **Disclaimer:** 
 > This project is created strictly for educational, demonstration, and research purposes. Using this software on devices without explicit prior authorization from the owner is illegal.
 
-<img width="1280" height="720" alt="D__rust_rat_target_debug_server exe2026-09-2415-35-55-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/6d2488ee-e015-4fb9-9545-d8951c182dd7" />
+<img width="1920" height="1080" alt="Windows PowerShell 2026-09-16 13-54-20" src="https://github.com/user-attachments/assets/59ad7b74-9de0-4dfa-860c-bec735ce788a" />
+
+---
 
 ## Features
 
@@ -16,6 +18,8 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
   - Remote command execution.
   - Input event capture using the `rdev` library.
   - Client screen broadcast.
+
+---
 
 ## Prerequisites & Building
 
@@ -39,14 +43,19 @@ cargo run --bin server
 cargo run --bin client
 ```
 
+---
+
 ## Downloads (Pre-built Binaries)
 
 You can download the latest compiled binaries from the [Releases page](../../releases/latest):
 
 ### Windows (x86_64)
-[![Download Server](https://img.shields.io/badge/Download-server.exe-2496ED?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/0.2.0/server-x86_64-pc-windows-msvc.exe)
-[![Download Client](https://img.shields.io/badge/Download-client.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/0.2.0/client-x86_64-pc-windows-msvc.exe)
+[![Download Server](https://img.shields.io/badge/Download-server.exe-2496ED?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.0/server.exe)
+[![Download Client](https://img.shields.io/badge/Download-client.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.0/client.exe)
   
 ### Linux (x86_64)
-[![Download Server](https://img.shields.io/badge/Download-server.exe-2496ED?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/0.2.0/server-x86_64-unknown-linux-gnu)
-[![Download Client](https://img.shields.io/badge/Download-client.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/0.2.0/client-x86_64-unknown-linux-gnu)
+[![Download Server](https://img.shields.io/badge/Download-server.exe-2496ED?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.1/server)
+[![Download Client](https://img.shields.io/badge/Download-client.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/yatsenk/rat/releases/download/v0.1.1/client)
+
+## Contributing
+Contributors or Pull Requests are Welcome!!!
