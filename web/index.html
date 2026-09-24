@@ -33,22 +33,11 @@
 
     ws.binaryType = "blob";
 
-    console.log("we are here");
-
     ws.onmessage = async (event) => {
-        console.log("creating bitmap ...");
-
         const bitmap = await createImageBitmap(event.data);
-
         canvas.width = bitmap.width;
         canvas.height = bitmap.height;
-
-        console.log("drawing image ...");
-
         ctx.drawImage(bitmap, 0, 0);
-
-        console.log("closing bitmap ...");
-
         bitmap.close();
     };
 
