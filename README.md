@@ -7,8 +7,6 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
 
 <img width="1280" height="720" alt="D__rust_rat_target_debug_server exe2026-09-2415-35-55-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/6d2488ee-e015-4fb9-9545-d8951c182dd7" />
 
----
-
 ## Features
 
 - **Cargo Workspace Architecture:** Clean separation into client (`client`), server (`server`).
@@ -18,8 +16,6 @@ A modular Remote Administration Tool (RAT) written in **Rust**. Built as a Cargo
   - Remote command execution.
   - Input event capture using the `rdev` library.
   - Client screen broadcast.
-
----
 
 ## Prerequisites & Building
 
@@ -42,8 +38,6 @@ cargo run --bin server
 ```bash
 cargo run --bin client
 ```
-
----
 
 ## Downloads (Pre-built Binaries)
 
