@@ -22,6 +22,8 @@ use std::process::Command;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
+const FPS: f32 = 1.0;
+
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let tcpsocket = TcpStream::connect("127.0.0.1:7878").await?;
@@ -59,7 +61,13 @@ async fn main() -> io::Result<()> {
             exec_script(rd_txt).await
         });
 
-    let _ = tokio::try_join!(worker_a, worker_b, worker_c, workder_d, worker_f);
+    let _ = tokio::try_join!(
+        worker_a, 
+        worker_b, 
+        worker_c, 
+        workder_d, 
+        worker_f,
+    );
 
     Ok(())
 }
@@ -89,7 +97,7 @@ async fn send_keystrokes(mut rx: Receiver<String>, mut wr: WriteHalf<TcpStream>)
 }
 
 async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
-    let frame_duration = Duration::from_secs_f32(1.0);
+    let frame_duration = Duration::from_secs_f32(FPS);
 
     tokio::task::spawn_blocking(move || {
         let display = Display::primary()?;
